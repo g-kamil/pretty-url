@@ -1,0 +1,17 @@
+node_modules/
+main.js
+*.zip
+.DS_Store
+.env
+.env.*
+.npmrc
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
+*.tsbuildinfo
+*.map
+.obsidian/
+/data.json
+/favicon-cache/

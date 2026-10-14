@@ -1,0 +1,20 @@
+{
+  "name": "pretty-url",
+  "version": "1.0.0",
+  "description": "Responsive, Material-inspired URL card grids for Obsidian.",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@codemirror/view": "^6.0.0",
+    "@types/node": "^22.15.17",
+    "esbuild": "0.25.5",
+    "obsidian": "latest",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.3"
+  }
+}
