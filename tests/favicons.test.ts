@@ -6,23 +6,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setImmediate } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import test, { after, before, type TestContext } from 'node:test';
+import test, { after, type TestContext } from 'node:test';
 import { transform } from 'esbuild';
-import { FaviconCache, type FaviconAdapter, type FaviconRequest } from '../src/favicons';
+import type { FaviconAdapter, FaviconRequest } from '../src/favicons';
+import type * as FaviconModule from '../src/favicons';
 
-// Older Node releases expose Web Crypto through node:crypto rather than globally.
-const cryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
-let installedCrypto = false;
-before(() => {
-  if (!globalThis.crypto) {
-    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: webcrypto });
-    installedCrypto = true;
-  }
-});
+// Install the renderer before loading the real module: its reload-persistent
+// registry is created at evaluation time, not when the first test starts.
+const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
+const rendererWindow = { crypto: webcrypto };
+Object.defineProperty(globalThis, 'window', { configurable: true, value: rendererWindow });
+const { FaviconCache } = require('../src/favicons') as typeof FaviconModule;
+type FaviconCache = InstanceType<typeof FaviconCache>;
 after(() => {
-  if (!installedCrypto) return;
-  if (cryptoDescriptor) Object.defineProperty(globalThis, 'crypto', cryptoDescriptor);
-  else Reflect.deleteProperty(globalThis, 'crypto');
+  if (windowDescriptor) Object.defineProperty(globalThis, 'window', windowDescriptor);
+  else Reflect.deleteProperty(globalThis, 'window');
 });
 
 const FOLDER = 'plugin/favicon-cache';
@@ -77,7 +75,7 @@ async function reloadCacheClass(): Promise<typeof FaviconCache> {
     .then(source => transform(source, { loader: 'ts', format: 'cjs', target: 'es2021' }))
     .then(result => result.code);
   const module = { exports: {} as { FaviconCache: typeof FaviconCache } };
-  new Function('module', 'exports', await compiledModule)(module, module.exports);
+  new Function('module', 'exports', 'window', await compiledModule)(module, module.exports, rendererWindow);
   return module.exports.FaviconCache;
 }
 

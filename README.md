@@ -85,6 +85,8 @@ Select whole lines, outside any existing code fence. You can assign a hotkey thr
 
 The minimum card width is configurable from 180–420 px (default 260 px). CSS uses Obsidian theme variables, supports reduced motion, and has print styles. Card links use Obsidian's standard external-link behavior with `noopener noreferrer`.
 
+On Obsidian 1.13 and newer, the plugin's settings also appear in settings search. Older supported versions retain the same controls in **Settings → Pretty URL**.
+
 With favicons disabled (the default), rendering cards makes no requests to linked sites. Titles and descriptions are supplied in the note, not fetched from pages. Plugin settings are stored in the plugin folder's `data.json`.
 
 This is an Obsidian-native card syntax, not a parser for MkDocs `<div class="grid cards" markdown>` markup, Material icon shortcodes, or generic non-link grids.
@@ -111,6 +113,20 @@ npm test
 ```
 
 `npm run dev` watches and rebuilds `main.js`; copy the bundle and CSS into your vault and reload the plugin after changes. The runtime uses Obsidian and its bundled CodeMirror API; no separate runtime dependency installation is required.
+
+### Releases
+
+Update `package.json`, `package-lock.json`, `manifest.json`, and `versions.json` together, commit the changes, and push a tag matching the stable `X.Y.Z` version exactly (without a `v` prefix). The release workflow runs the tests and production build, uploads `main.js`, `manifest.json`, and `styles.css` to a draft release, generates [GitHub build provenance attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds) for those exact files, and publishes only after attestation succeeds.
+
+The workflow does not overwrite existing releases. If a run fails after creating its draft, remove that failed draft before rerunning. Existing releases are not retroactively attested by adding this workflow.
+
+After downloading a release asset, verify its provenance with GitHub CLI:
+
+```sh
+gh attestation verify main.js --repo g-kamil/pretty-url
+gh attestation verify manifest.json --repo g-kamil/pretty-url
+gh attestation verify styles.css --repo g-kamil/pretty-url
+```
 
 ## License
 

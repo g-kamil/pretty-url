@@ -10,7 +10,7 @@ import {
   requestUrl,
   setIcon,
 } from 'obsidian';
-import type { App, MarkdownPostProcessorContext } from 'obsidian';
+import type { App, MarkdownPostProcessorContext, SettingDefinition } from 'obsidian';
 import { cardsToBlock, parseCards, webUrl } from './cards';
 import type { UrlCard } from './cards';
 import { parseCardFences } from './fences';
@@ -67,7 +67,8 @@ export default class PrettyUrlPlugin extends Plugin {
   private faviconsDisposed = false;
 
   async onload(): Promise<void> {
-    const saved = await this.loadData();
+    const data: unknown = await this.loadData();
+    const saved = data !== null && typeof data === 'object' ? data as Record<string, unknown> : {};
     this.settings = {
       automaticParagraphs: typeof saved?.automaticParagraphs === 'boolean' ? saved.automaticParagraphs : true,
       automaticLists: typeof saved?.automaticLists === 'boolean' ? saved.automaticLists : true,
@@ -249,7 +250,7 @@ export default class PrettyUrlPlugin extends Plugin {
             if (!icon || icon.document !== document) continue;
             icon.intersecting = entry.isIntersecting && entry.intersectionRect.width > 0 && entry.intersectionRect.height > 0;
             if (icon.intersecting) this.requestFavicon(icon);
-            else if (document!.hidden.delete(icon)) this.watchHiddenFavicons(document!);
+            else if (document?.hidden.delete(icon)) this.watchHiddenFavicons(document);
           }
         }, { root: null, rootMargin: '0px', threshold: 0 }),
         visibilityObserver: new win.MutationObserver(() => {
@@ -341,8 +342,7 @@ export default class PrettyUrlPlugin extends Plugin {
   }
 
   private loadFaviconImage(state: FaviconIcon, resource: string, generation: number): void {
-    const image = state.element.ownerDocument.createElement('img');
-    image.className = 'pretty-url-favicon';
+    const image = state.element.ownerDocument.adoptNode(createEl('img', { cls: 'pretty-url-favicon' }));
     image.alt = '';
     image.referrerPolicy = 'no-referrer';
     image.decoding = 'async';
@@ -479,8 +479,7 @@ export default class PrettyUrlPlugin extends Plugin {
   }
 
   private createGrid(cards: UrlCard[], doc: Document): HTMLElement {
-    const grid = doc.createElement('ul');
-    grid.className = 'pretty-url-grid';
+    const grid = doc.adoptNode(createEl('ul', { cls: 'pretty-url-grid' }));
     grid.style.setProperty('--pretty-url-card-min-width', `${this.settings.minimumCardWidth}px`);
     for (const card of cards) {
       const item = grid.createEl('li', { cls: 'pretty-url-item' });
@@ -554,8 +553,7 @@ export default class PrettyUrlPlugin extends Plugin {
         }
       }
       if (!cards?.length) continue;
-      const root = element.ownerDocument.createElement('div');
-      root.className = 'pretty-url-root';
+      const root = element.ownerDocument.adoptNode(createDiv({ cls: 'pretty-url-root' }));
       root.appendChild(this.createGrid(cards, element.ownerDocument));
       element.replaceWith(root);
       this.track(root, { original: element }, ctx);
@@ -586,53 +584,82 @@ class PrettyUrlSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
 
+  getSettingDefinitions(): (SettingDefinition & { render?: (setting: Setting) => void })[] {
+    return [
+      {
+        name: 'URL cards',
+        desc: 'URL card blocks work in Reading view and Live Preview. Automatic conversion applies only in Reading view; inline links and mixed-content lists are left untouched.',
+        searchable: false,
+      },
+      {
+        name: 'Standalone URLs',
+        desc: 'Turn paragraphs containing only web links into cards in Reading view.',
+        render: setting => {
+          setting.addToggle(toggle => toggle.setValue(this.plugin.settings.automaticParagraphs).onChange(async value => {
+            this.plugin.settings.automaticParagraphs = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          }));
+        },
+      },
+      {
+        name: 'Link-only lists',
+        desc: 'Turn lists with exactly one web link per item into a card grid in Reading view.',
+        render: setting => {
+          setting.addToggle(toggle => toggle.setValue(this.plugin.settings.automaticLists).onChange(async value => {
+            this.plugin.settings.automaticLists = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          }));
+        },
+      },
+      {
+        name: 'Favicons',
+        desc: 'Opt in to direct requests to each visible card’s site for /favicon.ico. Your IP address is shared with that site; note URLs and referrers are not sent. Icons are cached locally until cleared.',
+        render: setting => {
+          setting.addToggle(toggle => toggle.setValue(this.plugin.settings.favicons).onChange(async value => {
+            this.plugin.setFaviconsEnabled(value);
+            await this.plugin.saveData(this.plugin.settings);
+          }));
+        },
+      },
+      {
+        name: 'Clear favicon cache',
+        desc: 'Remove cached icons and remembered failures. When favicons are enabled, only visible cards request fresh icons.',
+        render: setting => {
+          setting.addButton(button => button.setButtonText('Clear cache').onClick(async () => {
+            button.setDisabled(true);
+            try {
+              await this.plugin.clearFaviconCache();
+              new Notice('Favicon cache cleared.');
+            } catch {
+              new Notice('Could not clear the favicon cache.');
+            } finally {
+              button.setDisabled(false);
+            }
+          }));
+        },
+      },
+      {
+        name: 'Minimum card width',
+        desc: 'Cards wrap into fewer columns when the note pane is narrow. In pixels.',
+        render: setting => {
+          setting.addSlider(slider => slider.setLimits(180, 420, 10).setValue(this.plugin.settings.minimumCardWidth).onChange(async value => {
+            this.plugin.settings.minimumCardWidth = value;
+            await this.plugin.saveData(this.plugin.settings);
+            this.plugin.refresh();
+          }));
+        },
+      },
+    ];
+  }
+
+  // Obsidian before 1.13 does not render or index setting definitions.
   display(): void {
     this.containerEl.empty();
-    this.containerEl.createEl('p', { text: 'URL card blocks work in Reading view and Live Preview. Automatic conversion applies only in Reading view; inline links and mixed-content lists are left untouched.' });
-    new Setting(this.containerEl)
-      .setName('Standalone URLs')
-      .setDesc('Turn paragraphs containing only web links into cards in Reading view.')
-      .addToggle(toggle => toggle.setValue(this.plugin.settings.automaticParagraphs).onChange(async value => {
-        this.plugin.settings.automaticParagraphs = value;
-        await this.plugin.saveData(this.plugin.settings);
-        this.plugin.refresh();
-      }));
-    new Setting(this.containerEl)
-      .setName('Link-only lists')
-      .setDesc('Turn lists with exactly one web link per item into a card grid in Reading view.')
-      .addToggle(toggle => toggle.setValue(this.plugin.settings.automaticLists).onChange(async value => {
-        this.plugin.settings.automaticLists = value;
-        await this.plugin.saveData(this.plugin.settings);
-        this.plugin.refresh();
-      }));
-    new Setting(this.containerEl)
-      .setName('Favicons')
-      .setDesc('Opt in to direct requests to each visible card’s site for /favicon.ico. Your IP address is shared with that site; note URLs and referrers are not sent. Icons are cached locally until cleared.')
-      .addToggle(toggle => toggle.setValue(this.plugin.settings.favicons).onChange(async value => {
-        this.plugin.setFaviconsEnabled(value);
-        await this.plugin.saveData(this.plugin.settings);
-      }));
-    new Setting(this.containerEl)
-      .setName('Clear favicon cache')
-      .setDesc('Remove cached icons and remembered failures. When favicons are enabled, only visible cards request fresh icons.')
-      .addButton(button => button.setButtonText('Clear cache').onClick(async () => {
-        button.setDisabled(true);
-        try {
-          await this.plugin.clearFaviconCache();
-          new Notice('Favicon cache cleared.');
-        } catch {
-          new Notice('Could not clear the favicon cache.');
-        } finally {
-          button.setDisabled(false);
-        }
-      }));
-    new Setting(this.containerEl)
-      .setName('Minimum card width')
-      .setDesc('Cards wrap into fewer columns when the note pane is narrow. In pixels.')
-      .addSlider(slider => slider.setLimits(180, 420, 10).setValue(this.plugin.settings.minimumCardWidth).setDynamicTooltip().onChange(async value => {
-        this.plugin.settings.minimumCardWidth = value;
-        await this.plugin.saveData(this.plugin.settings);
-        this.plugin.refresh();
-      }));
+    for (const definition of this.getSettingDefinitions()) {
+      const setting = new Setting(this.containerEl).setName(definition.name).setDesc(definition.desc ?? '');
+      definition.render?.(setting);
+    }
   }
 }

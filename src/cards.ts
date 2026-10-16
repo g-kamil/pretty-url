@@ -32,7 +32,7 @@ export function parseCardLine(line: string): UrlCard | null {
   let title = '';
   const link = /^\[((?:\\.|[^\]\\])*)\]\((.*)\)$/.exec(value);
   if (link) {
-    title = link[1].replace(/\\([\\\[\]])/g, '$1').trim();
+    title = link[1].replace(/\\([\\[\]])/g, '$1').trim();
     destination = link[2];
   }
   if (destination.startsWith('<') && destination.endsWith('>')) {

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add a tag-driven release workflow that attests built release assets before publishing.
+- Make plugin settings searchable in Obsidian 1.13+, while retaining the settings tab on older supported versions.
+- Validate loaded settings through `unknown` and preserve defaults and card-width bounds for invalid saved values.
+- Use renderer-window favicon state and Obsidian DOM helpers, preserving document ownership in popout windows.
+- Remove an unnecessary regular-expression escape, redundant type assertions, and the deprecated slider tooltip call.
+- Use the broadly supported page-break rule to keep printed cards together.
+
 ## 1.0.0
 
 - Initial public release.

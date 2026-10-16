@@ -144,6 +144,6 @@
   .pretty-url-root a.pretty-url-card {
     box-shadow: none;
     transform: none;
-    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

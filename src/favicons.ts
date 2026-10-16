@@ -29,11 +29,11 @@ const MAX_BYTES = 256 * 1024;
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const FORMATS: Record<ImageFormat, true> = { ico: true, png: true, jpg: true, gif: true, webp: true };
 // plugin:reload evaluates a new module while old native calls and writes can
-// still finish. Keep both guards in the renderer, not in module-local state.
+// still finish. Use the main renderer window, never the active popout window.
 const RUNTIME_KEY = Symbol.for('pretty-url.favicon-cache.runtime');
-const runtime = globalThis as unknown as Record<symbol, CacheRegistry | undefined>;
+const runtime = window as unknown as Record<symbol, CacheRegistry | undefined>;
 const REGISTRY = runtime[RUNTIME_KEY] ?? new WeakMap<FaviconAdapter, Map<string, SharedState>>();
-if (!runtime[RUNTIME_KEY]) Object.defineProperty(globalThis, RUNTIME_KEY, { value: REGISTRY });
+if (!runtime[RUNTIME_KEY]) Object.defineProperty(window, RUNTIME_KEY, { value: REGISTRY });
 
 function matches(bytes: Uint8Array, offset: number, signature: readonly number[]): boolean {
   for (let index = 0; index < signature.length; index++) {
@@ -220,7 +220,7 @@ export class FaviconCache {
   private id(origin: string): Promise<string> {
     let id = this.ids.get(origin);
     if (!id) {
-      id = globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(origin)).then(digest => {
+      id = window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(origin)).then(digest => {
         let hex = '';
         for (const byte of new Uint8Array(digest)) hex += byte.toString(16).padStart(2, '0');
         return hex;
@@ -313,7 +313,7 @@ export class FaviconCache {
           try {
             await this.adapter.writeBinary(entry.imagePath, data);
             if (this.current(entry)) {
-              metadata.cachedAt = globalThis.crypto.randomUUID();
+              metadata.cachedAt = window.crypto.randomUUID();
               resource = this.resource(entry.imagePath, metadata.cachedAt);
               metadata.format = format;
             }
