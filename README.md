@@ -2,7 +2,9 @@
 
 An Obsidian plugin that turns web links into responsive card grids, inspired by [Material for MkDocs cards](https://squidfunk.github.io/mkdocs-material/reference/grids/). Cards have a border, hover elevation, keyboard focus outline, optional description, and a visible destination. Columns adapt to the note pane width; URL addresses stay on one line and use an ellipsis when they exceed the card width, without changing the full link destination. Optional site favicons replace the standard link icon when available.
 
-![Pretty URL cards in Obsidian Reading view, including automatic cards for a plain link list.](images/reading-view.png)
+![A three-column grid with Obsidian, Python, MDN, TypeScript, Wikipedia, and Stack Overflow favicons, plus an automatic link-list grid in Obsidian Reading view.](images/reading-view.png)
+
+*Real Obsidian screenshots with **Settings → Pretty URL → Favicons** enabled. Favicons are off by default; enabling them fetches icons directly from the linked sites and caches them locally.*
 
 Requires Obsidian 1.5.0 or newer.
 
@@ -32,7 +34,7 @@ https://developer.mozilla.org/en-US/
 
 In Live Preview, move the caret into the block to edit its source and outside it to see the cards again. Source mode always retains ordinary Markdown. The original Markdown is never rewritten by rendering.
 
-![A url-cards block in Source mode beside the rendered cards in Live Preview.](images/source-and-live-preview.png)
+![Markdown source on the left and a two-column Live Preview grid with real site favicons on the right.](images/source-and-live-preview.png)
 
 *Source mode (left) and Live Preview (right). In Live Preview, only explicit `url-cards` blocks render as cards. Ordinary link lists become cards only in Reading view.*
 
@@ -119,6 +121,8 @@ npm test
 Update `package.json`, `package-lock.json`, `manifest.json`, and `versions.json` together, commit the changes, and push a tag matching the stable `X.Y.Z` version exactly (without a `v` prefix). The release workflow runs the tests and production build, uploads `main.js`, `manifest.json`, and `styles.css` to a draft release, generates [GitHub build provenance attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds) for those exact files, and publishes only after attestation succeeds.
 
 The workflow does not overwrite existing releases. If a run fails after creating its draft, remove that failed draft before rerunning. Existing releases are not retroactively attested by adding this workflow.
+
+The [community scorecard](https://community.obsidian.md/plugins/pretty-url) scans the latest published release, not the repository's HEAD. Source fixes and the attestation workflow will only be reflected after a new release is published and scanned.
 
 After downloading a release asset, verify its provenance with GitHub CLI:
 

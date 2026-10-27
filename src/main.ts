@@ -10,7 +10,7 @@ import {
   requestUrl,
   setIcon,
 } from 'obsidian';
-import type { App, MarkdownPostProcessorContext, SettingDefinition } from 'obsidian';
+import type { App, MarkdownPostProcessorContext } from 'obsidian';
 import { cardsToBlock, parseCards, webUrl } from './cards';
 import type { UrlCard } from './cards';
 import { parseCardFences } from './fences';
@@ -23,6 +23,13 @@ interface PrettyUrlSettings {
   minimumCardWidth: number;
   favicons: boolean;
 }
+
+// Plain row data is also consumed by display() before the declarative API exists.
+type PrettyUrlSettingDefinition = {
+  name: string;
+  desc: string;
+  searchable?: boolean;
+} & ({ render: (setting: Setting) => void } | { render?: never });
 
 const DEFAULT_SETTINGS: PrettyUrlSettings = {
   automaticParagraphs: true,
@@ -132,7 +139,7 @@ export default class PrettyUrlPlugin extends Plugin {
         if (selection.trim()) {
           const { cards, errors } = parseCards(selection);
           if (errors.length || !cards.length) {
-            new Notice('Select URLs or Markdown links, one per line. Descriptions must be indented. Nothing was changed.');
+            new Notice('Select web links, one per line. Descriptions must be indented. Nothing was changed.');
             return;
           }
           block = cardsToBlock(cards);
@@ -584,7 +591,7 @@ class PrettyUrlSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
 
-  getSettingDefinitions(): (SettingDefinition & { render?: (setting: Setting) => void })[] {
+  getSettingDefinitions(): PrettyUrlSettingDefinition[] {
     return [
       {
         name: 'URL cards',
