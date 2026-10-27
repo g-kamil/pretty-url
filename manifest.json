@@ -1,7 +1,7 @@
 {
   "id": "pretty-url",
   "name": "Pretty URL",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.5.0",
   "description": "Turn URLs into responsive, Material-inspired card grids in your notes.",
   "author": "g-kamil",

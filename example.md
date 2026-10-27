@@ -1,20 +1,28 @@
-## A three-column card grid
+# Useful links
 
-This block forces three cards per row in Reading view and Live Preview, even in a narrow pane. Remove `c=3` to restore responsive columns. Move the caret into the block to edit it.
+A few places worth keeping close — notes, code, and the web.
 
 ```url-cards c=3
-[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/reference/grids/)
-  The inspiration: responsive grids, bordered cards, and hover elevation.
-
 [Obsidian](https://obsidian.md)
   A connected workspace for your notes.
 
+[Python](https://www.python.org)
+  Learn a language built for readable, practical code.
+
 [MDN Web Docs](https://developer.mozilla.org/en-US/)
-  Reference documentation for the web platform.
+  Reference guides for the web platform.
 
 [TypeScript](https://www.typescriptlang.org/docs/)
-  Typed JavaScript, with tools for reliable applications.
+  Tools and documentation for typed JavaScript.
+
+[Wikipedia](https://en.wikipedia.org)
+  Follow your curiosity, one article at a time.
+
+[Stack Overflow](https://stackoverflow.com)
+  Practical answers to programming questions.
 ```
+
+This block uses `c=3` for three equal columns. Remove it for a grid that adapts to the pane width. In Live Preview, move the caret into the block to edit the Markdown.
 
 ## Automatic link lists
 
